@@ -17,11 +17,12 @@
 #define XAX A0
 #define YAX A1
 #define YOYBUTTON 0
+//
 LiquidCrystal_I2C lcd(ADRESSLCD, COL, ROW); // Create object assistance display
 Adafruit_PCD8544 display(CLK, DIN, DC, CE, RST);
-
+//
 enum class Direction { UP, DOWN, RIGHT, LEFT };
-
+//
 const uint8_t MaxWidth		= 84; //x
 const uint8_t MaxHeight		= 48; //y
 const uint8_t sizeOfArray 	= 200;
@@ -45,11 +46,13 @@ private:
 	void readMove() {
 		delay(500);
 		milisec = millis();
-		while(millis() - milisec < (500 - gameSpeed * 10)) {
-			if(analogRead(XAX) < 100) actualDir = Direction::LEFT;
-			if(analogRead(XAX) > 1000 ) actualDir = Direction::RIGHT;
-			if(analogRead(YAX) > 1000) actualDir = Direction::DOWN;
-			if(analogRead(YAX) < 100 ) actualDir = Direction::UP;
+		while(millis() - milisec < (400 - gameSpeed * 10)) {
+			int xan = analogRead(XAX);
+			int yan = analogRead(YAX);
+			if(xan < 100) actualDir = Direction::LEFT;
+			if(xan > 1000 ) actualDir = Direction::RIGHT;
+			if(yan > 1000) actualDir = Direction::DOWN;
+			if(yan < 100 ) actualDir = Direction::UP;
 		}
 	};
 	void updateArrayOfSnake(Direction dir) {
@@ -135,9 +138,10 @@ public:
 		display.drawCircle(xEgg, yEgg, 1, BLACK);
 		display.display();
 		assistantLCDScore();
-		readMove(); // Czekamy na wcisniecie przyscisku
+		oldDir = actualDir;
 	};
 	void logic() {
+		readMove();
 		switch(actualDir) {
 		case Direction::UP:
 			if (oldDir == Direction::DOWN) actualDir = oldDir;
