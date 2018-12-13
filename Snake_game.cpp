@@ -14,7 +14,9 @@
 #define COL 16
 #define ADRESSLCD 0x27
 #define INITLENGHT 4
-
+#define XAX A0
+#define YAX A1
+#define YOYBUTTON 0
 LiquidCrystal_I2C lcd(ADRESSLCD, COL, ROW); // Create object assistance display
 Adafruit_PCD8544 display(CLK, DIN, DC, CE, RST);
 
@@ -39,43 +41,55 @@ private:
 	const uint8_t MoveRange; // Step of move in game
 	// Czeka na wcisniecie przycisku odpowiednia ilosc czasu
 	// zalezna od szybkosci gry
+	unsigned long milisec;
 	void readMove() {
-		delay(300);
+		delay(500);
+		milisec = millis();
+		while(millis() - milisec < (500 - gameSpeed * 10)) {
+			if(analogRead(XAX) < 100) actualDir = Direction::LEFT;
+			if(analogRead(XAX) > 1000 ) actualDir = Direction::RIGHT;
+			if(analogRead(YAX) > 1000) actualDir = Direction::DOWN;
+			if(analogRead(YAX) < 100 ) actualDir = Direction::UP;
+		}
 	};
 	void updateArrayOfSnake(Direction dir) {
 		switch(dir) {
 		case Direction::UP:
-			xSnake[posHeadSnakeInArray] ;
-			ySnake[posHeadSnakeInArray] -= MoveRange ;
+			xSnake[posHeadSnakeInArray] = xSnake[posHeadSnakeInArray - 1] ;
+			ySnake[posHeadSnakeInArray] = ySnake[posHeadSnakeInArray - 1] - MoveRange ;
 			if(xEgg == xSnake[posHeadSnakeInArray] && yEgg == ySnake[ySnake[posHeadSnakeInArray]]) {
 				snakeLength += 1;
+				gameSpeed += 1;
 				randomEgg();
 			}
 			posHeadSnakeInArray += 1;
 			break;
 		case Direction::DOWN:
-			xSnake[posHeadSnakeInArray] ;
-			ySnake[posHeadSnakeInArray] += MoveRange;
+			xSnake[posHeadSnakeInArray] = xSnake[posHeadSnakeInArray - 1] ;
+			ySnake[posHeadSnakeInArray] = ySnake[posHeadSnakeInArray - 1] + MoveRange;
 			if(xEgg == xSnake[posHeadSnakeInArray] && yEgg == ySnake[ySnake[posHeadSnakeInArray]]) {
 				snakeLength += 1;
+				gameSpeed += 1;
 				randomEgg();
 			}
 			posHeadSnakeInArray += 1;
 			break;
 		case Direction::LEFT:
-			xSnake[posHeadSnakeInArray] -= MoveRange;
-			ySnake[posHeadSnakeInArray] ;
+			xSnake[posHeadSnakeInArray] = xSnake[posHeadSnakeInArray - 1] - MoveRange;
+			ySnake[posHeadSnakeInArray] = ySnake[posHeadSnakeInArray - 1] ;
 			if(xEgg == xSnake[posHeadSnakeInArray] && yEgg == ySnake[ySnake[posHeadSnakeInArray]]) {
 				snakeLength += 1;
+				gameSpeed += 1;
 				randomEgg();
 			}
 			posHeadSnakeInArray += 1;
 			break;
 		case Direction::RIGHT:
-			xSnake[posHeadSnakeInArray] ;
-			ySnake[posHeadSnakeInArray] += MoveRange;
+			xSnake[posHeadSnakeInArray] = xSnake[posHeadSnakeInArray - 1] + MoveRange;
+			ySnake[posHeadSnakeInArray] = ySnake[posHeadSnakeInArray - 1] ;
 			if(xEgg == xSnake[posHeadSnakeInArray] && yEgg == ySnake[ySnake[posHeadSnakeInArray]]) {
 				snakeLength += 1;
+				gameSpeed += 1;
 				randomEgg();
 			}
 			posHeadSnakeInArray += 1;
@@ -83,7 +97,7 @@ private:
 		default:
 			break;
 		}
-	}
+	};
 	void assistantLCDScore() {
 		lcd.clear();
 		lcd.setCursor(0, 0);
@@ -145,7 +159,6 @@ public:
 		}
 	};
 	void game() {
-
 	};
 };
 Snake snake;
@@ -155,6 +168,7 @@ void setup() {
 	lcd.backlight();//assistance disp light ON
 	display.begin();
 	display.setContrast(50);
+	pinMode(YOYBUTTON, INPUT_PULLUP);
 }
 
 void loop() {
